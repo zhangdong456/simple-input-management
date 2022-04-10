@@ -9,7 +9,7 @@ namespace CustomInput
         public bool IsPressed;
         public bool Used;
 
-        public bool OnPressed
+        public bool DownPressed
         {
             get
             {

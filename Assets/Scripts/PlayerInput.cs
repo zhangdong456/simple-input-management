@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using CustomInput;
 public class PlayerInput : MonoBehaviour
 {
     public static PlayerInput Instance;
 
-    //按键复合输入
+    //按键复合输入  (复合按钮指的是 该类事件有多种按钮的 点击情况  比如jump 可以是Space 也可以是Z按键)
     public CompoundButtonInput Jump = new CompoundButtonInput();
     public CompoundButtonInput Cancel = new CompoundButtonInput();
     public CompoundButtonInput Attack = new CompoundButtonInput();
@@ -15,6 +16,9 @@ public class PlayerInput : MonoBehaviour
     //轴值复合输入
     public CompoundAxisInput HorizontalDlgiPad = new CompoundAxisInput();
     public CompoundAxisInput VerticalDlgiPad = new CompoundAxisInput();
+
+    //组合按钮 模拟有些游戏通过组合按钮切换技能
+    public CombinationButtonInput ChangeSkill = new CombinationButtonInput();
 
     public IButtonInput LeftClick;
     public IButtonInput RightClick;
@@ -36,6 +40,7 @@ public class PlayerInput : MonoBehaviour
         VerticalDlgiPad.Add(new ButtonAxisInput(new KeyCodeButtonInput(KeyCode.DownArrow), ButtonAxisInput.Mode.Negative));
         VerticalDlgiPad.Add(new ButtonAxisInput(new KeyCodeButtonInput(KeyCode.UpArrow), ButtonAxisInput.Mode.Positive));
         
+        //复合按键 指的是 任意按键触发的时候都会触发此点击事件
         Jump.Add(new KeyCodeButtonInput(KeyCode.Space));
         Jump.Add(new KeyCodeButtonInput(KeyCode.Z));
         
@@ -45,7 +50,13 @@ public class PlayerInput : MonoBehaviour
         Attack.Add(new KeyCodeButtonInput(KeyCode.R));
         Attack.Add(new KeyCodeButtonInput(KeyCode.T));
         
-        
+        //当Ctrl与其他按键组合的时候 在Editor下 其他按键会失效 但是打包之后是正常的
+        //这个需要额外注意一下 其他按键组合没有影响
+        ChangeSkill.Add(new KeyCodeButtonInput(KeyCode.LeftControl),
+            new KeyCodeButtonInput(KeyCode.Alpha1));
+
+
+
         LeftClick = new KeyCodeButtonInput(KeyCode.Mouse0);
         RightClick = new KeyCodeButtonInput(KeyCode.Mouse1);
     }
@@ -59,12 +70,14 @@ public class PlayerInput : MonoBehaviour
             Jump,
             Attack,
             Cancel,
+            ChangeSkill,
         };
         m_allButtonProcessors = new List<InputButtonProcessor>
         {
            LogicInput.Jump,
            LogicInput.Attack,
            LogicInput.Cancel,
+           LogicInput.ChangeSkill
         };
         m_allAxisInputs = new List<IAxisInput>
         {
@@ -97,6 +110,9 @@ public class PlayerInput : MonoBehaviour
         LogicInput.VerticalDigiPadValue = Mathf.RoundToInt(VerticalDlgiPad.AxisValue());
         LogicInput.HorizontalValue = Mathf.Clamp((float)LogicInput.HorizontalDigiPadValue, -1f, 1f);
         LogicInput.VerticalValue = Mathf.Clamp((float)LogicInput.VerticalDigiPadValue, -1f, 1f);
+        
+        
+        //复合按键更新
         LogicInput.LeftStick.Update(LeftClick.GetButton());
         LogicInput.RightStick.Update(RightClick.GetButton());
         LogicInput.Down.Update(LogicInput.NormalizedVertical == -1f);
@@ -114,5 +130,6 @@ public class PlayerInput : MonoBehaviour
             }
             m_allButtonProcessors[i].Update(b_Clicked);
         }
+        
     }
 }
